@@ -32,6 +32,18 @@ func main() {
 	// add endpoint for searching files
 	rootDir := os.DirFS(*basedir)
 	router := mux.NewRouter()
+	router.HandleFunc("/view", func(w http.ResponseWriter, r *http.Request) {
+		query := r.URL.Query().Get("q")
+		log.Printf("viewing with query '%s'", query)
+		// check if starts with /, simplify to ./
+		if strings.HasPrefix(query, "/") {
+			query = strings.Replace(query, "/", "./", 1)
+		}
+		// list all files in destpath directory
+		query = filepath.Clean(query)
+		content, _ := fs.ReadFile(rootDir, query)
+		w.Write(content)
+	})
 	router.HandleFunc("/search", func(w http.ResponseWriter, r *http.Request) {
 		// go through filesystem
 		query := r.URL.Query().Get("q")

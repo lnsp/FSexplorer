@@ -1,10 +1,15 @@
 <template>
-  <div class="p-4" @keydown="handleKeyboard" tabindex="0" ref="fileList">
-    <ul class="grid grid-cols-1 grid-rows-1 auto-rows-fr gap-4">
+  <div
+    class="p-4 focus:outline-none"
+    @keydown="handleKeyboard"
+    tabindex="0"
+    ref="fileList"
+  >
+    <ul class="grid grid-cols-1 grid-rows-1 gap-3">
       <li
         v-for="(file, index) in files"
         v-bind:key="file.name"
-        @click="select(file.path)"
+        @click="selectAndNavigate(index)"
         class="
           flex flex-row
           items-center
@@ -17,20 +22,36 @@
           group
           hover:shadow-lg
           hover:border-blue-700
+          hover:bg-blue-100
+          h-12
         "
-        :class="{'border-blue-700': chosen(index)}"
+        :class="{
+          'border-blue-700': chosen(index),
+          'bg-blue-100': chosen(index),
+          'shadow-lg': chosen(index),
+        }"
         ref="files"
       >
-        <div class="flex items-center justify-center text-gray-400 w-10 group-hover:text-blue-700" :class="{'border-blue-700': chosen(index) }">
+        <div
+          class="
+            flex
+            items-center
+            justify-center
+            text-gray-400
+            w-10
+            group-hover:text-blue-700
+          "
+          :class="{ 'text-blue-700': chosen(index) }"
+        >
           <template v-if="file.isDirectory">
-            <outline-folder-icon class="w-6 h-6" />
+            <outline-folder-icon class="w-5 h-5" />
           </template>
           <template v-else>
-            <outline-document-icon class="w-6 h-6" />
+            <outline-document-icon class="w-5 h-5" />
           </template>
         </div>
         <div class="w-full flex flex-row justify-between items-center">
-          <div>{{ file.name }}</div>
+          <div class="text-sm">{{ file.name }}</div>
           <div class="flex flex-col items-end">
             <div v-if="!file.isDirectory" class="text-xs text-gray-500">
               {{ file.size }} bytes
@@ -42,6 +63,7 @@
         </div>
       </li>
     </ul>
+    <FileModal v-if="isFileModalVisible" :visible="isFileModalVisible" :path="fileModalPath" @onclose="closeFileModal" />
   </div>
 </template>
 
@@ -57,6 +79,8 @@ export default {
   data() {
     return {
       selected: 0,
+      isFileModalVisible: false,
+      fileModalPath: '',
     }
   },
   watch: {
@@ -64,24 +88,38 @@ export default {
       this.selected = 0
     },
   },
-  mounted () {
+  mounted() {
     focus()
   },
   methods: {
     ...mapActions({
       select: 'files/search',
     }),
-    focus () {
-      this.$refs.fileList.$el.focus()
+    focus() {
+      this.$refs.fileList.focus()
     },
-    chosen (index) {
+    chosen(index) {
       return this.selected == index
     },
     navigateBack() {
       this.$store.dispatch('files/history', 1)
     },
     navigateForward() {
-      this.select(this.files[this.selected].path)
+      let file = this.files[this.selected]
+      if (file.isDirectory) {
+        this.select(file.path)
+      } else {
+        this.fileModalPath = file.path;
+        this.isFileModalVisible = true;
+      }
+    },
+    closeFileModal() {
+      this.isFileModalVisible = false;
+      this.focus()
+    },
+    selectAndNavigate(index) {
+      this.selected = index
+      this.navigateForward()
     },
     handleKeyboard(event) {
       switch (event.keyCode) {

@@ -2,7 +2,7 @@
   <div>
     <div v-on:click="reset" class="cursor-pointer">
       <h1 class="text-xl">
-        <span class="font-medium text-blue-600">fs</span><span class="text-gray-600">explorer</span>
+        <span class="font-semibold text-blue-700">FS</span><span class="font-medium">explorer</span>
       </h1>
     </div>
   </div>

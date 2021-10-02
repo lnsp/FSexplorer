@@ -54,6 +54,7 @@ export default {
   googleFonts: {
     families: {
       Inter: [400, 500, 600, 700, 800],
+      'JetBrains Mono': [400, 500],
     },
   },
 
