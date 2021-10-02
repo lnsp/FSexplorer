@@ -12,7 +12,7 @@
 export default {
   methods: {
     reset() {
-      this.$store.dispatch('query/update', '/');
+      this.$store.dispatch('files/search', '/');
       this.$router.push('/');
     }
   }

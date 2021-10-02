@@ -26,8 +26,9 @@
         rounded
         pl-9
       "
-      v-on:keyup.enter="search(query)"
-      v-model="query"
+      v-on:keyup.enter="search(path)"
+      v-model="path"
+      tabindex="1"
     />
   </div>
 </template>
@@ -38,22 +39,26 @@ import { mapActions } from 'vuex';
 export default {
   data () {
     return {
-      query: this.$store.state.query.path,
+      path: this.viewedPath,
     }
   },
   computed: {
-    viewedQuery() {
-      return this.$store.state.query.path
+    viewedPath() {
+      return this.$store.state.files.path;
     }
   },
   watch: {
-    viewedQuery (newValue, oldValue) {
-      this.query = newValue;
+    viewedPath (newValue, oldValue) {
+      if (!newValue.startsWith('/')) {
+        this.path = '/' + newValue;
+      } else {
+        this.path = newValue;
+      }
     }
   },
   methods: {
     ...mapActions({
-      search: 'query/update'
+      search: 'files/search'
     })
   }
 }

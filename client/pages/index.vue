@@ -7,7 +7,7 @@
 <script>
 export default {
   mounted () {
-    this.$store.dispatch('query/update', '/');
-  }
+    this.$store.dispatch('files/search', '/');
+  },
 }
 </script>

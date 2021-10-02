@@ -17,6 +17,7 @@ import (
 
 type fileEntry struct {
 	Name      string `json:"name"`
+	Path      string `json:"path"`
 	MIME      string `json:"mime"`
 	Size      int64  `json:"size"`
 	Directory bool   `json:"isDirectory"`
@@ -47,24 +48,31 @@ func main() {
 			http.Error(w, "internal error", http.StatusInternalServerError)
 			return
 		}
+		paths := make([]string, len(entries))
+		for i, e := range entries {
+			paths[i] = filepath.Join(query, e.Name())
+		}
 		files := make([]fileEntry, 0, len(entries))
-		for _, e := range entries {
-			if e.IsDir() {
+		for _, path := range paths {
+			stat, err := fs.Stat(rootDir, path)
+			if err != nil {
+				log.Printf("failed to stat file '%s': %v", path, err)
+				continue
+			}
+			if stat.IsDir() {
 				files = append(files, fileEntry{
-					Name:      e.Name(),
+					Name:      stat.Name(),
+					Path:      path,
 					Directory: true,
 				})
 			} else {
-				extension := filepath.Ext(e.Name())
+				extension := filepath.Ext(stat.Name())
 				mimeType := mime.TypeByExtension(extension)
-				stats, err := fs.Stat(rootDir, filepath.Join(query, e.Name()))
-				if err != nil {
-					log.Fatal(err)
-				}
 				files = append(files, fileEntry{
-					Name: e.Name(),
+					Name: stat.Name(),
+					Path: path,
 					MIME: mimeType,
-					Size: stats.Size(),
+					Size: stat.Size(),
 				})
 			}
 		}

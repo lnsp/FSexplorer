@@ -1,6 +1,6 @@
 <template>
   <div class="flex items-center">
-    <NuxtLink to="/settings" class="w-9 h-9 rounded-full hover:bg-gray-100 flex items-center justify-center group">
+    <NuxtLink to="/settings" class="w-9 h-9 rounded-full hover:bg-gray-100 flex items-center justify-center group" tabindex="2">
       <outline-cog-icon
         class="
           w-5

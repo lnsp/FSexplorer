@@ -1,10 +1,10 @@
 <template>
-  <div class="p-4">
+  <div class="p-4" @keydown="handleKeyboard" tabindex="0" ref="fileList">
     <ul class="grid grid-cols-1 grid-rows-1 auto-rows-fr gap-4">
       <li
-        v-for="file in files"
+        v-for="(file, index) in files"
         v-bind:key="file.name"
-        v-on:click="select(file.name)"
+        @click="select(file.path)"
         class="
           flex flex-row
           items-center
@@ -12,15 +12,16 @@
           px-2
           py-2
           rounded
-          border-2
-          border-white
+          border-2 border-white
           shadow-sm
           group
           hover:shadow-lg
           hover:border-blue-700
         "
+        :class="{'border-blue-700': chosen(index)}"
+        ref="files"
       >
-        <div class="flex items-center justify-center text-gray-400 w-10">
+        <div class="flex items-center justify-center text-gray-400 w-10 group-hover:text-blue-700" :class="{'border-blue-700': chosen(index) }">
           <template v-if="file.isDirectory">
             <outline-folder-icon class="w-6 h-6" />
           </template>
@@ -45,7 +46,7 @@
 </template>
 
 <script>
-import { mapActions } from 'vuex';
+import { mapActions } from 'vuex'
 
 export default {
   computed: {
@@ -53,10 +54,52 @@ export default {
       return this.$store.state.files.list
     },
   },
+  data() {
+    return {
+      selected: 0,
+    }
+  },
+  watch: {
+    files(newValue, oldValue) {
+      this.selected = 0
+    },
+  },
+  mounted () {
+    focus()
+  },
   methods: {
     ...mapActions({
-      select: 'query/join',
-    })
-  }
+      select: 'files/search',
+    }),
+    focus () {
+      this.$refs.fileList.$el.focus()
+    },
+    chosen (index) {
+      return this.selected == index
+    },
+    navigateBack() {
+      this.$store.dispatch('files/history', 1)
+    },
+    navigateForward() {
+      this.select(this.files[this.selected].path)
+    },
+    handleKeyboard(event) {
+      switch (event.keyCode) {
+        case 72: // back
+          this.navigateBack()
+          break
+        case 74: // down
+          this.selected = (this.selected + 1) % this.files.length
+          break
+        case 75: // up
+          this.selected =
+            (this.selected + this.files.length - 1) % this.files.length
+          break
+        case 76: // forward
+          this.navigateForward()
+          break
+      }
+    },
+  },
 }
 </script>
