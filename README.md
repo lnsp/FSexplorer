@@ -37,4 +37,3 @@ k | move cursor up
 l | enter directory / view file
 esc | close file viewer
 d | download file (when viewing file)
-```
