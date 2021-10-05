@@ -1,4 +1,4 @@
-module github.com/lnsp/fsexplorer/server
+module github.com/lnsp/fsexplorer
 
 go 1.16
 

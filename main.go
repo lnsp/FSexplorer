@@ -3,17 +3,21 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
+	"io"
 	"io/fs"
 	"log"
-	"mime"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/gorilla/handlers"
-	"github.com/lnsp/fsexplorer/server/client"
+	"github.com/lnsp/fsexplorer/client"
 )
+
+const MaxViewLimit = 1_000_000
 
 type fileEntry struct {
 	Name      string `json:"name"`
@@ -33,6 +37,7 @@ func main() {
 	router := http.NewServeMux()
 	router.HandleFunc("/api/view", func(w http.ResponseWriter, r *http.Request) {
 		query := r.URL.Query().Get("q")
+		download := r.URL.Query().Get("download") != ""
 		log.Printf("viewing with query '%s'", query)
 		// check if starts with /, simplify to ./
 		if strings.HasPrefix(query, "/") {
@@ -40,8 +45,32 @@ func main() {
 		}
 		// list all files in destpath directory
 		query = filepath.Clean(query)
-		content, _ := fs.ReadFile(rootDir, query)
-		w.Write(content)
+		// get file name
+		stat, err := fs.Stat(rootDir, query)
+		if err != nil {
+			http.Error(w, "Could not stat file", http.StatusNotFound)
+			return
+		}
+		if stat.Size() > MaxViewLimit && !download {
+			http.Error(w, "File is too large to view", http.StatusInternalServerError)
+			return
+		}
+		file, err := rootDir.Open(query)
+		if err != nil {
+			http.Error(w, "Could not open file", http.StatusNotFound)
+			return
+		}
+		defer file.Close()
+		// write header
+		if download {
+			w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, stat.Name()))
+		}
+		w.Header().Set("Content-Length", strconv.Itoa(int(stat.Size())))
+		w.WriteHeader(http.StatusOK)
+		if _, err := io.Copy(w, file); err != nil {
+			http.Error(w, "Could not copy file", http.StatusInternalServerError)
+			return
+		}
 	})
 	router.HandleFunc("/api/search", func(w http.ResponseWriter, r *http.Request) {
 		// go through filesystem
@@ -77,12 +106,9 @@ func main() {
 					Directory: true,
 				})
 			} else {
-				extension := filepath.Ext(stat.Name())
-				mimeType := mime.TypeByExtension(extension)
 				files = append(files, fileEntry{
 					Name: stat.Name(),
 					Path: path,
-					MIME: mimeType,
 					Size: stat.Size(),
 				})
 			}
@@ -97,4 +123,21 @@ func main() {
 	if err := http.ListenAndServe(*addr, handlers.CORS()(router)); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func GetFileContentType(fsys fs.FS, path string) (string, error) {
+	file, err := fsys.Open(path)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	// Only the first 512 bytes are used to sniff the content type.
+	buffer := make([]byte, 512)
+	_, err = file.Read(buffer)
+	if err != nil {
+		return "", err
+	}
+	contentType := http.DetectContentType(buffer)
+	return contentType, nil
 }

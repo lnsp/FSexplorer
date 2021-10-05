@@ -8,6 +8,7 @@
     ref="dialog"
     @keydown.stop="handleKeyboard"
   >
+    <iframe class="hidden" ref="download" />
     <div
       class="
         flex
@@ -26,11 +27,6 @@
         class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
         aria-hidden="true"
       ></div>
-      <span
-        class="hidden sm:inline-block sm:align-middle sm:h-screen"
-        aria-hidden="true"
-        >&#8203;</span
-      >
       <div
         class="
           inline-block
@@ -48,7 +44,16 @@
           sm:w-full
         "
       >
-        <div class="bg-white p-4 font-mono text-sm overflow-x-scroll"><pre>{{ content }}</pre></div>
+        <div class="bg-white p-4 text-md flex items-center max-w-lg" v-if="error">
+          <div>
+            <div class="uppercase text-xs font-medium text-gray-500">status</div>
+            <div class="text-3xl font-bold text-red-600">{{ error.status }}</div>
+          </div>
+          <div class="ml-4 text-red-600">{{ error.message }}</div>
+        </div>
+        <div class="bg-white p-4 font-mono text-sm overflow-x-scroll" v-else>
+          <pre>{{ content }}</pre>
+        </div>
       </div>
     </div>
   </div>
@@ -58,6 +63,7 @@
 export default {
   data() {
     return {
+      error: null,
       content: '',
     }
   },
@@ -68,7 +74,7 @@ export default {
       handler(newValue, oldValue) {
         if (newValue && !oldValue) {
           console.log('visible value changed')
-          this.fetch(this.path)
+          this.view(this.path)
         }
       },
     },
@@ -91,11 +97,28 @@ export default {
         case 72:
           this.close()
           break
+        case 68:
+          this.download(this.path)
+          break
       }
     },
-    async fetch(path) {
-      console.log('fetching content')
-      this.content = await this.$axios.$get('/view', { params: { q: path } })
+    async download(path) {
+      console.log('attempting download')
+      console.log(this.$refs.download)
+      this.$refs.download.src =
+        this.$axios.defaults.baseURL +
+        '/view?download=true&q=' +
+        encodeURIComponent(path)
+    },
+    async view(path) {
+      try {
+        this.content = await this.$axios.$get('/view', { params: { q: path } })
+      } catch (err) {
+        this.error = {
+          status: err.response.status,
+          message: err.response.data,
+        }
+      }
     },
   },
 }
