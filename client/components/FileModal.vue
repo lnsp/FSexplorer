@@ -12,15 +12,10 @@
     <div
       class="
         flex
-        items-end
         justify-center
         min-h-screen
-        pt-4
-        px-4
-        pb-20
+        p-4
         text-center
-        sm:block
-        sm:p-0
       "
     >
       <div
@@ -29,27 +24,26 @@
       ></div>
       <div
         class="
-          inline-block
+          flex
           align-bottom
           bg-white
           rounded-lg
           text-left
-          overflow-hidden
           shadow-xl
+          overflow-hidden
           transform
           transition-all
+          sm:w-full
           sm:my-8
           sm:align-middle
-          sm:max-w-7xl
-          sm:w-full
         "
       >
-        <div class="bg-white p-4 text-md flex items-center max-w-lg" v-if="error">
+        <div class="bg-white p-4 text-md flex flex-col justify-center items-center w-full" v-if="error">
           <div>
-            <div class="uppercase text-xs font-medium text-gray-500">status</div>
+            <div class="text-center uppercase text-xs font-medium text-gray-500">status</div>
             <div class="text-3xl font-bold text-red-600">{{ error.status }}</div>
           </div>
-          <div class="ml-4 text-red-600">{{ error.message }}</div>
+          <div class="mt-4 text-red-600">{{ error.message }}</div>
         </div>
         <div class="bg-white p-4 font-mono text-sm overflow-x-scroll" v-else>
           <pre>{{ content }}</pre>
