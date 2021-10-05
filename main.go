@@ -12,7 +12,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/handlers"
-	"github.com/gorilla/mux"
+	"github.com/lnsp/fsexplorer/server/client"
 )
 
 type fileEntry struct {
@@ -26,13 +26,12 @@ type fileEntry struct {
 func main() {
 	basedir := flag.String("basedir", "/", "base directory to use")
 	addr := flag.String("address", "localhost:9876", "address to listen on")
+	static := flag.Bool("static", false, "host static files on root")
 	flag.Parse()
-	// setup cors options
-
 	// add endpoint for searching files
 	rootDir := os.DirFS(*basedir)
-	router := mux.NewRouter()
-	router.HandleFunc("/view", func(w http.ResponseWriter, r *http.Request) {
+	router := http.NewServeMux()
+	router.HandleFunc("/api/view", func(w http.ResponseWriter, r *http.Request) {
 		query := r.URL.Query().Get("q")
 		log.Printf("viewing with query '%s'", query)
 		// check if starts with /, simplify to ./
@@ -44,7 +43,7 @@ func main() {
 		content, _ := fs.ReadFile(rootDir, query)
 		w.Write(content)
 	})
-	router.HandleFunc("/search", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/api/search", func(w http.ResponseWriter, r *http.Request) {
 		// go through filesystem
 		query := r.URL.Query().Get("q")
 		log.Printf("searching with query '%s'", query)
@@ -92,6 +91,9 @@ func main() {
 		buf, _ := json.Marshal(files)
 		w.Write(buf)
 	})
+	if *static {
+		router.Handle("/", http.FileServer(http.FS(client.Dist())))
+	}
 	if err := http.ListenAndServe(*addr, handlers.CORS()(router)); err != nil {
 		log.Fatal(err)
 	}
