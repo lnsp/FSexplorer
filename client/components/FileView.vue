@@ -11,6 +11,7 @@
         v-bind:key="file.name"
         @click="selectAndNavigate(index)"
         class="
+          file-list-item
           flex flex-row
           items-center
           bg-white
@@ -30,7 +31,6 @@
           'bg-blue-100': chosen(index),
           'shadow-lg': chosen(index),
         }"
-        ref="files"
       >
         <div
           class="
@@ -63,7 +63,12 @@
         </div>
       </li>
     </ul>
-    <FileModal v-if="isFileModalVisible" :visible="isFileModalVisible" :path="fileModalPath" @onclose="closeFileModal" />
+    <FileModal
+      v-if="isFileModalVisible"
+      :visible="isFileModalVisible"
+      :path="fileModalPath"
+      @onclose="closeFileModal"
+    />
   </div>
 </template>
 
@@ -89,7 +94,7 @@ export default {
     },
   },
   mounted() {
-    focus()
+    this.focus()
   },
   methods: {
     ...mapActions({
@@ -109,12 +114,12 @@ export default {
       if (file.isDirectory) {
         this.select(file.path)
       } else {
-        this.fileModalPath = file.path;
-        this.isFileModalVisible = true;
+        this.fileModalPath = file.path
+        this.isFileModalVisible = true
       }
     },
     closeFileModal() {
-      this.isFileModalVisible = false;
+      this.isFileModalVisible = false
       this.focus()
     },
     selectAndNavigate(index) {
@@ -127,11 +132,12 @@ export default {
           this.navigateBack()
           break
         case 74: // down
-          this.selected = (this.selected + 1) % this.files.length
+          this.selected = Math.min(this.selected + 1, this.files.length - 1)
+          this.$el.querySelector(`.file-list-item:nth-child(${this.selected+1})`).scrollIntoView(false)
           break
         case 75: // up
-          this.selected =
-            (this.selected + this.files.length - 1) % this.files.length
+          this.selected = Math.max(this.selected - 1, 0)
+          this.$el.querySelector(`.file-list-item:nth-child(${this.selected+1})`).scrollIntoView(false)
           break
         case 76: // forward
           this.navigateForward()
